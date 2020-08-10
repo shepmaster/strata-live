@@ -1,0 +1,76 @@
+.container {
+    background: white;
+    padding: 0.5em;
+    border: 1px solid;
+}
+
+.container :global(.shepherd-footer) {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-areas: 'prev action next';
+    grid-gap: 0.5em;
+}
+
+.prevButton {
+    grid-area: prev;
+}
+
+.actionButton {
+    grid-area: action;
+}
+
+.nextButton {
+    grid-area: next;
+}
+
+.container :global(.shepherd-arrow) {
+    height: 52px;
+    width: 35px;
+}
+
+.container :global(.shepherd-arrow:after) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 35px;
+}
+
+.container[data-popper-placement^='left'] :global(.shepherd-arrow),
+.container:global(.shepherd-pinned-left .shepherd-arrow) {
+    right: -40px;
+}
+
+.container[data-popper-placement^='left'] :global(.shepherd-arrow:after),
+.container:global(shepherd-pinned-left .shepherd-arrow:after) {
+    content: '👉';
+}
+
+.container[data-popper-placement^='right'] :global(.shepherd-arrow),
+.container:global(.shepherd-pinned-right .shepherd-arrow) {
+    left: -40px;
+}
+
+.container[data-popper-placement^='right'] :global(.shepherd-arrow:after),
+.container:global(shepherd-pinned-right .shepherd-arrow:after) {
+    content: '👈';
+}
+
+.container[data-popper-placement^='top'] :global(.shepherd-arrow),
+.container:global(.shepherd-pinned-top .shepherd-arrow) {
+    bottom: -47px;
+}
+
+.container[data-popper-placement^='top'] :global(.shepherd-arrow:after),
+.container:global(shepherd-pinned-top .shepherd-arrow:after) {
+    content: '👇';
+}
+
+.container[data-popper-placement^='bottom'] :global(.shepherd-arrow),
+.container:global(.shepherd-pinned-bottom .shepherd-arrow) {
+    top: -47px;
+}
+
+.container[data-popper-placement^='bottom'] :global(.shepherd-arrow:after),
+.container:global(shepherd-pinned-bottom .shepherd-arrow:after) {
+    content: '👆';
+}

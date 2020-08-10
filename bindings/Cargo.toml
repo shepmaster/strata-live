@@ -1,0 +1,19 @@
+[package]
+name = "bindings"
+version = "0.1.0"
+authors = ["Jake Goulding <jake.goulding@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+strata = { version = "0.1.1" }
+fuzzy-pickles = { version = "0.1.0" }
+wasm-bindgen = { version = "0.2.67", features = ["serde-serialize"] }
+snafu = "0.6.8"
+js-sys = "0.3.44"
+serde = { version = "1.0.114", features = ["derive"] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-mutable-globals"]

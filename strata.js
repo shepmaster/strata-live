@@ -2481,6 +2481,13 @@
             }
         }
         /**
+        * @returns {number}
+        */
+        expressionDepth() {
+            var ret = wasm.indexedsource_expressionDepth(this.ptr);
+            return ret >>> 0;
+        }
+        /**
         * @param {string} layer
         * @param {string} ident
         * @returns {BigUint64Array}
@@ -2578,7 +2585,7 @@
     });
 
     var bindings = async () => {
-                            await init("assets/bindings-560e7c6e.wasm");
+                            await init("assets/bindings-2cee37da.wasm");
                             return exports$1;
                         };
 
@@ -3007,7 +3014,8 @@
     const getSourceIdent = (state) => state.source.ident;
     const getIsLoaded = createSelector([getIndexedSource], (a) => !!a);
     const getIndex = createSelector([getIndexedSource, getSourceText], (IndexedSource, source) => IndexedSource && strataErr(() => new IndexedSource(source)));
-    const getFound = createSelector([getIndex, getSourceIdent], (idx, ident) => idx?.andThen((idx) => strataErr(() => idx.searchLayer('function', ident))));
+    const getExpressionDepth = createSelector([getIndex], (idx) => idx?.map((i) => i.expressionDepth()));
+    const getFound = createSelector([getIndex, getSourceLayer, getSourceIdent], (idx, layer, ident) => idx?.andThen((idx) => strataErr(() => idx.searchLayer(layer, ident))));
     const formatExtentList = (found) => {
         let output = '';
         for (let i = 0; i < found.length; i += 2) {
@@ -3037,34 +3045,6 @@
     };
     const getLayer0 = createSelector([getSourceText, getFound], (src, found) => found?.map((found) => zz(src, found)));
 
-    const TOUR_ID_SOURCE = 'source';
-    const TOUR_ID_IDENT = 'ident';
-    const Input = () => {
-        const dispatch = useDispatch();
-        const source = useSelector(getSourceText);
-        const layer = useSelector(getSourceLayer);
-        const ident = useSelector(getSourceIdent);
-        const executionResult = useSelector(getExecutionResult);
-        const { output = '', error = '' } = executionResult;
-        return (react.createElement(react.Fragment, null,
-            react.createElement("section", null,
-                react.createElement("h1", null, "Source code"),
-                react.createElement("textarea", { value: source, onChange: (e) => dispatch(textChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_SOURCE })),
-            react.createElement("section", null,
-                react.createElement("h1", null, "Layer"),
-                react.createElement("select", { value: layer, onChange: (e) => dispatch(layerChange(e.currentTarget.value)) },
-                    react.createElement("option", null, "function"))),
-            react.createElement("section", null,
-                react.createElement("h1", null, "Ident"),
-                react.createElement("textarea", { value: ident, onChange: (e) => dispatch(identChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_IDENT })),
-            react.createElement("section", null,
-                react.createElement("h1", null, "Output"),
-                react.createElement("div", null, output)),
-            react.createElement("section", null,
-                react.createElement("h1", null, "Error"),
-                react.createElement("div", null, error))));
-    };
-
     function styleInject(css, ref) {
       if ( ref === void 0 ) ref = {};
       var insertAt = ref.insertAt;
@@ -3092,9 +3072,46 @@
       }
     }
 
-    var css_248z = ".Output-module_container__bTAHU {\n    position: relative;\n}\n\n.Output-module_code__23Vx0 {\n    position: absolute;\n}\n\n.Output-module_layer__355Uj {\n    position: absolute;\n    color: rgba(0, 0, 0, 0);\n}\n\n.Output-module_layer0__JoD8o {\n}\n\n.Output-module_layer0__JoD8o > b {\n    background-color: rgba(255, 255, 0, 0.5);\n}\n";
-    var css = {"container":"Output-module_container__bTAHU","code":"Output-module_code__23Vx0","layer":"Output-module_layer__355Uj","layer0":"Output-module_layer0__JoD8o Output-module_layer__355Uj"};
+    var css_248z = ".Input-module_source__KUesD {\n    width: 100%;\n    font-family: monospace;\n}\n";
+    var css = {"source":"Input-module_source__KUesD"};
     styleInject(css_248z);
+
+    const TOUR_ID_SOURCE = 'source';
+    const TOUR_ID_IDENT = 'ident';
+    const Input = () => {
+        const dispatch = useDispatch();
+        const source = useSelector(getSourceText);
+        const expressionDepth = useSelector(getExpressionDepth)?.unwrapOr(0);
+        const layer = useSelector(getSourceLayer);
+        const ident = useSelector(getSourceIdent);
+        const executionResult = useSelector(getExecutionResult);
+        const expressions = Array.from(Array(expressionDepth).keys()).map((i) => (react.createElement("option", { key: i },
+            "expression-",
+            i)));
+        const { output = '', error = '' } = executionResult;
+        return (react.createElement(react.Fragment, null,
+            react.createElement("section", null,
+                react.createElement("h1", null, "Source code"),
+                react.createElement("textarea", { value: source, onChange: (e) => dispatch(textChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_SOURCE, className: css.source })),
+            react.createElement("section", null,
+                react.createElement("h1", null, "Layer"),
+                react.createElement("select", { value: layer, onChange: (e) => dispatch(layerChange(e.currentTarget.value)) },
+                    react.createElement("option", null, "function"),
+                    expressions)),
+            react.createElement("section", null,
+                react.createElement("h1", null, "Ident"),
+                react.createElement("textarea", { value: ident, onChange: (e) => dispatch(identChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_IDENT, className: css.source })),
+            react.createElement("section", null,
+                react.createElement("h1", null, "Output"),
+                react.createElement("div", null, output)),
+            react.createElement("section", null,
+                react.createElement("h1", null, "Error"),
+                react.createElement("div", null, error))));
+    };
+
+    var css_248z$1 = ".Output-module_container__bTAHU {\n    position: relative;\n}\n\n.Output-module_code__23Vx0 {\n    position: absolute;\n}\n\n.Output-module_layer__355Uj {\n    position: absolute;\n    color: rgba(0, 0, 0, 0);\n}\n\n.Output-module_layer0__JoD8o {\n}\n\n.Output-module_layer0__JoD8o > b {\n    background-color: rgba(255, 255, 0, 0.5);\n}\n";
+    var css$1 = {"container":"Output-module_container__bTAHU","code":"Output-module_code__23Vx0","layer":"Output-module_layer__355Uj","layer0":"Output-module_layer0__JoD8o Output-module_layer__355Uj"};
+    styleInject(css_248z$1);
 
     const TOUR_ID_OUTPUT = 'output';
     const Output = () => {
@@ -3103,9 +3120,9 @@
         const layer0Html = layer0.unwrapOr([]).map(({ not, is }, i) => (react.createElement(react.Fragment, { key: i },
             not,
             react.createElement("b", null, is))));
-        return (react.createElement("div", { className: css.container, "data-tour-id": TOUR_ID_OUTPUT },
-            react.createElement("pre", { className: css.layer0 }, layer0Html),
-            react.createElement("pre", { className: css.code }, source)));
+        return (react.createElement("div", { className: css$1.container, "data-tour-id": TOUR_ID_OUTPUT },
+            react.createElement("pre", { className: css$1.layer0 }, layer0Html),
+            react.createElement("pre", { className: css$1.code }, source)));
     };
 
     /*! shepherd.js 7.1.5 */
@@ -8987,9 +9004,9 @@ fn bar() {
             react.createElement(Button, null)));
     };
 
-    var css_248z$1 = ".Application-module_container__2qTq_ {\n    min-height: 100vh;\n\n    display: grid;\n    grid-template-columns: 25% 75%;\n    grid-template-rows: 90% 10%;\n    grid-template-areas:\n        'input output'\n        'help help';\n\n    grid-gap: 0.5em;\n}\n\n.Application-module_input__2Akxm {\n    grid-area: input;\n}\n\n.Application-module_output__3poFl {\n    grid-area: output;\n}\n\n.Application-module_help__20qK_ {\n    grid-area: help;\n    text-align: center;\n}\n";
-    var css$1 = {"container":"Application-module_container__2qTq_","input":"Application-module_input__2Akxm","output":"Application-module_output__3poFl","help":"Application-module_help__20qK_"};
-    styleInject(css_248z$1);
+    var css_248z$2 = ".Application-module_container__2qTq_ {\n    min-height: 100vh;\n\n    display: grid;\n    grid-template-columns: 25% 75%;\n    grid-template-rows: 90% 10%;\n    grid-template-areas:\n        'input output'\n        'help help';\n\n    grid-gap: 0.5em;\n}\n\n.Application-module_input__2Akxm {\n    grid-area: input;\n}\n\n.Application-module_output__3poFl {\n    grid-area: output;\n}\n\n.Application-module_help__20qK_ {\n    grid-area: help;\n    text-align: center;\n}\n";
+    var css$2 = {"container":"Application-module_container__2qTq_","input":"Application-module_input__2Akxm","output":"Application-module_output__3poFl","help":"Application-module_help__20qK_"};
+    styleInject(css_248z$2);
 
     const Application = () => {
         const isLoaded = useSelector(getIsLoaded);
@@ -8997,18 +9014,18 @@ fn bar() {
             return react.createElement("div", null, "Loading...");
         }
         else {
-            return (react.createElement("div", { className: css$1.container },
-                react.createElement("div", { className: css$1.input },
+            return (react.createElement("div", { className: css$2.container },
+                react.createElement("div", { className: css$2.input },
                     react.createElement(Input, null)),
-                react.createElement("div", { className: css$1.output },
+                react.createElement("div", { className: css$2.output },
                     react.createElement(Output, null)),
-                react.createElement("div", { className: css$1.help },
+                react.createElement("div", { className: css$2.help },
                     react.createElement(Tour$1, null))));
         }
     };
 
-    var css_248z$2 = "// https://dev.to/hankchizljaw/a-modern-css-reset-6p3\n\n/* Box sizing rules */\n*,\n*::before,\n*::after {\n    box-sizing: border-box;\n}\n\n/* Remove default padding */\nul[class],\nol[class] {\n    padding: 0;\n}\n\n/* Remove default margin */\nbody,\nh1,\nh2,\nh3,\nh4,\np,\nul[class],\nol[class],\nli,\nfigure,\nfigcaption,\nblockquote,\ndl,\ndd {\n    margin: 0;\n}\n\n/* Set core body defaults */\nbody {\n    min-height: 100vh;\n    scroll-behavior: smooth;\n    text-rendering: optimizeSpeed;\n    line-height: 1.5;\n}\n\n/* Remove list styles on ul, ol elements with a class attribute */\nul[class],\nol[class] {\n    list-style: none;\n}\n\n/* A elements that don't have a class get default styles */\na:not([class]) {\n    text-decoration-skip-ink: auto;\n}\n\n/* Make images easier to work with */\nimg {\n    max-width: 100%;\n    display: block;\n}\n\n/* Natural flow and rhythm in articles by default */\narticle > * + * {\n    margin-top: 1em;\n}\n\n/* Inherit fonts for inputs and buttons */\ninput,\nbutton,\ntextarea,\nselect {\n    font: inherit;\n}\n\n/* Remove all animations and transitions for people that prefer not to see them */\n@media (prefers-reduced-motion: reduce) {\n    * {\n        animation-duration: 0.01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: 0.01ms !important;\n        scroll-behavior: auto !important;\n    }\n}\n\n/* ---- */\n\n#main {\n    min-height: 100vh;\n}\n";
-    styleInject(css_248z$2);
+    var css_248z$3 = "// https://dev.to/hankchizljaw/a-modern-css-reset-6p3\n\n/* Box sizing rules */\n*,\n*::before,\n*::after {\n    box-sizing: border-box;\n}\n\n/* Remove default padding */\nul[class],\nol[class] {\n    padding: 0;\n}\n\n/* Remove default margin */\nbody,\nh1,\nh2,\nh3,\nh4,\np,\nul[class],\nol[class],\nli,\nfigure,\nfigcaption,\nblockquote,\ndl,\ndd {\n    margin: 0;\n}\n\n/* Set core body defaults */\nbody {\n    min-height: 100vh;\n    scroll-behavior: smooth;\n    text-rendering: optimizeSpeed;\n    line-height: 1.5;\n}\n\n/* Remove list styles on ul, ol elements with a class attribute */\nul[class],\nol[class] {\n    list-style: none;\n}\n\n/* A elements that don't have a class get default styles */\na:not([class]) {\n    text-decoration-skip-ink: auto;\n}\n\n/* Make images easier to work with */\nimg {\n    max-width: 100%;\n    display: block;\n}\n\n/* Natural flow and rhythm in articles by default */\narticle > * + * {\n    margin-top: 1em;\n}\n\n/* Inherit fonts for inputs and buttons */\ninput,\nbutton,\ntextarea,\nselect {\n    font: inherit;\n}\n\n/* Remove all animations and transitions for people that prefer not to see them */\n@media (prefers-reduced-motion: reduce) {\n    * {\n        animation-duration: 0.01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: 0.01ms !important;\n        scroll-behavior: auto !important;\n    }\n}\n\n/* ---- */\n\n#main {\n    min-height: 100vh;\n}\n";
+    styleInject(css_248z$3);
 
     const store = configureStore({
         reducer: reducer$2,

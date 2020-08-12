@@ -3077,6 +3077,7 @@
     styleInject(css_248z);
 
     const TOUR_ID_SOURCE = 'source';
+    const TOUR_ID_LAYER = 'layer';
     const TOUR_ID_IDENT = 'ident';
     const Input = () => {
         const dispatch = useDispatch();
@@ -3095,7 +3096,7 @@
                 react.createElement("textarea", { value: source, onChange: (e) => dispatch(textChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_SOURCE, className: css.source })),
             react.createElement("section", null,
                 react.createElement("h1", null, "Layer"),
-                react.createElement("select", { value: layer, onChange: (e) => dispatch(layerChange(e.currentTarget.value)) },
+                react.createElement("select", { value: layer, onChange: (e) => dispatch(layerChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_LAYER },
                     react.createElement("option", null, "function"),
                     expressions)),
             react.createElement("section", null,
@@ -3109,7 +3110,7 @@
                 react.createElement("div", null, error))));
     };
 
-    var css_248z$1 = ".Output-module_container__bTAHU {\n    position: relative;\n}\n\n.Output-module_code__23Vx0 {\n    position: absolute;\n}\n\n.Output-module_layer__355Uj {\n    position: absolute;\n    color: rgba(0, 0, 0, 0);\n}\n\n.Output-module_layer0__JoD8o {\n}\n\n.Output-module_layer0__JoD8o > b {\n    background-color: rgba(255, 255, 0, 0.5);\n}\n";
+    var css_248z$1 = ".Output-module_container__bTAHU {\n    position: relative;\n    height: 100%;\n    width: 100%;\n}\n\n.Output-module_code__23Vx0 {\n    position: absolute;\n}\n\n.Output-module_layer__355Uj {\n    position: absolute;\n    color: rgba(0, 0, 0, 0);\n}\n\n.Output-module_layer0__JoD8o {\n}\n\n.Output-module_layer0__JoD8o > b {\n    background-color: rgba(255, 255, 0, 0.5);\n}\n";
     var css$1 = {"container":"Output-module_container__bTAHU","code":"Output-module_code__23Vx0","layer":"Output-module_layer__355Uj","layer0":"Output-module_layer0__JoD8o Output-module_layer__355Uj"};
     styleInject(css_248z$1);
 
@@ -8928,6 +8929,10 @@
         return (react.createElement(ShepherdTourContext.Provider, { value: tourObject }, props.children));
     };
 
+    var css_248z$2 = ".Tour-module_container__2TbQh {\n    background: white;\n    padding: 0.5em;\n    border: 1px solid;\n}\n\n.Tour-module_container__2TbQh .shepherd-footer {\n    display: grid;\n    grid-template-columns: 1fr 2fr 1fr;\n    grid-template-areas: 'prev action next';\n    grid-gap: 0.5em;\n}\n\n.Tour-module_prevButton__2Mt9j {\n    grid-area: prev;\n}\n\n.Tour-module_actionButton__JEpE0 {\n    grid-area: action;\n}\n\n.Tour-module_nextButton__o8Hw3 {\n    grid-area: next;\n}\n\n.Tour-module_container__2TbQh .shepherd-arrow {\n    height: 52px;\n    width: 35px;\n}\n\n.Tour-module_container__2TbQh .shepherd-arrow:after {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 35px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='left'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-left .shepherd-arrow {\n    right: -40px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='left'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-left .shepherd-arrow:after {\n    content: '\\1F449';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='right'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-right .shepherd-arrow {\n    left: -40px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='right'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-right .shepherd-arrow:after {\n    content: '\\1F448';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='top'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-top .shepherd-arrow {\n    bottom: -47px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='top'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-top .shepherd-arrow:after {\n    content: '\\1F447';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='bottom'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-bottom .shepherd-arrow {\n    top: -47px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='bottom'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-bottom .shepherd-arrow:after {\n    content: '\\1F446';\n}\n";
+    var css$2 = {"container":"Tour-module_container__2TbQh","prevButton":"Tour-module_prevButton__2Mt9j","actionButton":"Tour-module_actionButton__JEpE0","nextButton":"Tour-module_nextButton__o8Hw3"};
+    styleInject(css_248z$2);
+
     const DEMO_SOURCE = `fn foo() {
     let alpha = 42;
 }
@@ -8942,31 +8947,53 @@ fn bar() {
     };
     const Tour$1 = () => {
         const dispatch = useDispatch();
+        const tourOptions = {
+            useModalOverlay: false,
+            defaultStepOptions: {
+                classes: css$2.container,
+                popperOptions: {
+                    modifiers: [{ name: 'offset', options: { offset: [0, 40] } }],
+                },
+            },
+        };
         const back = {
             type: 'back',
             text: 'Back',
+            classes: css$2.prevButton,
         };
         const next = {
             type: 'next',
             text: 'Next',
+            classes: css$2.nextButton,
         };
         const done = {
             type: 'next',
             text: 'Done',
+            classes: css$2.nextButton,
         };
-        const addSource = {
+        const setSource = {
             text: '✨ Example ✨',
             action: function () {
                 dispatch(textChange(DEMO_SOURCE));
                 this.next();
             },
+            classes: css$2.actionButton,
         };
-        const addIdent = {
+        const setLayer = {
+            text: '✨ Example ✨',
+            action: function () {
+                dispatch(layerChange(Layer.Function));
+                this.next();
+            },
+            classes: css$2.actionButton,
+        };
+        const setIdent = {
             text: '✨ Example ✨',
             action: function () {
                 dispatch(identChange(DEMO_IDENT));
                 this.next();
             },
+            classes: css$2.actionButton,
         };
         const steps = [
             {
@@ -8975,9 +9002,19 @@ fn bar() {
                     element: `[data-tour-id="${TOUR_ID_SOURCE}"]`,
                     on: 'right',
                 },
-                title: 'Source',
-                text: ['Add your source code here'],
-                buttons: [addSource, next],
+                title: 'Provide source code',
+                text: ['Enter some valid Rust source code here'],
+                buttons: [setSource, next],
+            },
+            {
+                id: 'layer',
+                attachTo: {
+                    element: `[data-tour-id="${TOUR_ID_LAYER}"]`,
+                    on: 'right',
+                },
+                title: 'Select a layer',
+                text: ['A layer is a section of the code you are interested in'],
+                buttons: [back, setLayer, next],
             },
             {
                 id: 'ident',
@@ -8985,28 +9022,28 @@ fn bar() {
                     element: `[data-tour-id="${TOUR_ID_IDENT}"]`,
                     on: 'right',
                 },
-                title: 'Ident',
-                text: ['And an ident here'],
-                buttons: [back, addIdent, next],
+                title: 'Search for an identifier',
+                text: ['All layers containing this identifier will be matched'],
+                buttons: [back, setIdent, next],
             },
             {
                 id: 'output',
                 attachTo: {
                     element: `[data-tour-id="${TOUR_ID_OUTPUT}"]`,
-                    on: 'left',
+                    on: 'bottom-start',
                 },
-                title: 'Output',
-                text: ['And then see what matches here'],
+                title: 'See matching layers',
+                text: ['Any layer that matched will be highlighted here'],
                 buttons: [back, done],
             },
         ];
-        return (react.createElement(ShepherdTour, { steps: steps, tourOptions: {} },
+        return (react.createElement(ShepherdTour, { steps: steps, tourOptions: tourOptions },
             react.createElement(Button, null)));
     };
 
-    var css_248z$2 = ".Application-module_container__2qTq_ {\n    min-height: 100vh;\n\n    display: grid;\n    grid-template-columns: 25% 75%;\n    grid-template-rows: 90% 10%;\n    grid-template-areas:\n        'input output'\n        'help help';\n\n    grid-gap: 0.5em;\n}\n\n.Application-module_input__2Akxm {\n    grid-area: input;\n}\n\n.Application-module_output__3poFl {\n    grid-area: output;\n}\n\n.Application-module_help__20qK_ {\n    grid-area: help;\n    text-align: center;\n}\n";
-    var css$2 = {"container":"Application-module_container__2qTq_","input":"Application-module_input__2Akxm","output":"Application-module_output__3poFl","help":"Application-module_help__20qK_"};
-    styleInject(css_248z$2);
+    var css_248z$3 = ".Application-module_container__2qTq_ {\n    min-height: 100vh;\n\n    display: grid;\n    grid-template-columns: 1fr 3fr;\n    grid-template-rows: 9fr 1fr;\n    grid-template-areas:\n        'input output'\n        'help help';\n\n    grid-gap: 0.5em;\n}\n\n.Application-module_input__2Akxm {\n    grid-area: input;\n}\n\n.Application-module_output__3poFl {\n    grid-area: output;\n}\n\n.Application-module_help__20qK_ {\n    grid-area: help;\n    text-align: center;\n}\n";
+    var css$3 = {"container":"Application-module_container__2qTq_","input":"Application-module_input__2Akxm","output":"Application-module_output__3poFl","help":"Application-module_help__20qK_"};
+    styleInject(css_248z$3);
 
     const Application = () => {
         const isLoaded = useSelector(getIsLoaded);
@@ -9014,18 +9051,18 @@ fn bar() {
             return react.createElement("div", null, "Loading...");
         }
         else {
-            return (react.createElement("div", { className: css$2.container },
-                react.createElement("div", { className: css$2.input },
+            return (react.createElement("div", { className: css$3.container },
+                react.createElement("div", { className: css$3.input },
                     react.createElement(Input, null)),
-                react.createElement("div", { className: css$2.output },
+                react.createElement("div", { className: css$3.output },
                     react.createElement(Output, null)),
-                react.createElement("div", { className: css$2.help },
+                react.createElement("div", { className: css$3.help },
                     react.createElement(Tour$1, null))));
         }
     };
 
-    var css_248z$3 = "// https://dev.to/hankchizljaw/a-modern-css-reset-6p3\n\n/* Box sizing rules */\n*,\n*::before,\n*::after {\n    box-sizing: border-box;\n}\n\n/* Remove default padding */\nul[class],\nol[class] {\n    padding: 0;\n}\n\n/* Remove default margin */\nbody,\nh1,\nh2,\nh3,\nh4,\np,\nul[class],\nol[class],\nli,\nfigure,\nfigcaption,\nblockquote,\ndl,\ndd {\n    margin: 0;\n}\n\n/* Set core body defaults */\nbody {\n    min-height: 100vh;\n    scroll-behavior: smooth;\n    text-rendering: optimizeSpeed;\n    line-height: 1.5;\n}\n\n/* Remove list styles on ul, ol elements with a class attribute */\nul[class],\nol[class] {\n    list-style: none;\n}\n\n/* A elements that don't have a class get default styles */\na:not([class]) {\n    text-decoration-skip-ink: auto;\n}\n\n/* Make images easier to work with */\nimg {\n    max-width: 100%;\n    display: block;\n}\n\n/* Natural flow and rhythm in articles by default */\narticle > * + * {\n    margin-top: 1em;\n}\n\n/* Inherit fonts for inputs and buttons */\ninput,\nbutton,\ntextarea,\nselect {\n    font: inherit;\n}\n\n/* Remove all animations and transitions for people that prefer not to see them */\n@media (prefers-reduced-motion: reduce) {\n    * {\n        animation-duration: 0.01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: 0.01ms !important;\n        scroll-behavior: auto !important;\n    }\n}\n\n/* ---- */\n\n#main {\n    min-height: 100vh;\n}\n";
-    styleInject(css_248z$3);
+    var css_248z$4 = "/* https://dev.to/hankchizljaw/a-modern-css-reset-6p3 */\n\n/* Box sizing rules */\n*,\n*::before,\n*::after {\n    box-sizing: border-box;\n}\n\n/* Remove default padding */\nul[class],\nol[class] {\n    padding: 0;\n}\n\n/* Remove default margin */\nbody,\nh1,\nh2,\nh3,\nh4,\np,\nul[class],\nol[class],\nli,\nfigure,\nfigcaption,\nblockquote,\ndl,\ndd {\n    margin: 0;\n}\n\n/* Set core body defaults */\nbody {\n    min-height: 100vh;\n    scroll-behavior: smooth;\n    text-rendering: optimizeSpeed;\n    line-height: 1.5;\n}\n\n/* Remove list styles on ul, ol elements with a class attribute */\nul[class],\nol[class] {\n    list-style: none;\n}\n\n/* A elements that don't have a class get default styles */\na:not([class]) {\n    text-decoration-skip-ink: auto;\n}\n\n/* Make images easier to work with */\nimg {\n    max-width: 100%;\n    display: block;\n}\n\n/* Natural flow and rhythm in articles by default */\narticle > * + * {\n    margin-top: 1em;\n}\n\n/* Inherit fonts for inputs and buttons */\ninput,\nbutton,\ntextarea,\nselect {\n    font: inherit;\n}\n\n/* Remove all animations and transitions for people that prefer not to see them */\n@media (prefers-reduced-motion: reduce) {\n    * {\n        animation-duration: 0.01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: 0.01ms !important;\n        scroll-behavior: auto !important;\n    }\n}\n\n/* ---- */\n\n#main {\n    min-height: 100vh;\n}\n";
+    styleInject(css_248z$4);
 
     const store = configureStore({
         reducer: reducer$2,

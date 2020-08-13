@@ -2510,6 +2510,29 @@
                 wasm.__wbindgen_export_2.value += 16;
             }
         }
+        /**
+        * @param {string} layer
+        * @param {string} ident
+        * @returns {BigUint64Array}
+        */
+        searchWithinLayer(layer, ident) {
+            try {
+                const retptr = wasm.__wbindgen_export_2.value - 16;
+                wasm.__wbindgen_export_2.value = retptr;
+                var ptr0 = passStringToWasm0(layer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+                var len0 = WASM_VECTOR_LEN;
+                var ptr1 = passStringToWasm0(ident, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+                var len1 = WASM_VECTOR_LEN;
+                wasm.indexedsource_searchWithinLayer(retptr, this.ptr, ptr0, len0, ptr1, len1);
+                var r0 = getInt32Memory0()[retptr / 4 + 0];
+                var r1 = getInt32Memory0()[retptr / 4 + 1];
+                var v2 = getArrayU64FromWasm0(r0, r1).slice();
+                wasm.__wbindgen_free(r0, r1 * 8);
+                return v2;
+            } finally {
+                wasm.__wbindgen_export_2.value += 16;
+            }
+        }
     }
 
     async function load(module, imports) {
@@ -2585,7 +2608,7 @@
     });
 
     var bindings = async () => {
-                            await init("assets/bindings-2cee37da.wasm");
+                            await init("assets/bindings-b5a096f6.wasm");
                             return exports$1;
                         };
 
@@ -3016,6 +3039,7 @@
     const getIndex = createSelector([getIndexedSource, getSourceText], (IndexedSource, source) => IndexedSource && strataErr(() => new IndexedSource(source)));
     const getExpressionDepth = createSelector([getIndex], (idx) => idx?.map((i) => i.expressionDepth()));
     const getFound = createSelector([getIndex, getSourceLayer, getSourceIdent], (idx, layer, ident) => idx?.andThen((idx) => strataErr(() => idx.searchLayer(layer, ident))));
+    const getBold = createSelector([getIndex, getSourceLayer, getSourceIdent], (idx, layer, ident) => idx?.andThen((idx) => strataErr(() => idx.searchWithinLayer(layer, ident))));
     const formatExtentList = (found) => {
         let output = '';
         for (let i = 0; i < found.length; i += 2) {
@@ -3026,7 +3050,7 @@
     const getExecutionResult = createSelector([getFound], (found) => found
         ?.map((found) => ({ output: formatExtentList(found) }))
         .unwrapOrElse((e) => ({ error: JSON.stringify(e) })));
-    const zz = (src, found) => {
+    const buildHighlight = (src, found) => {
         // TODO: All the coercion seems wrong
         // TODO: Are we correctly slicing by bytes?
         let start = 0n;
@@ -3043,7 +3067,9 @@
         parts.push({ not, is: '' });
         return parts;
     };
-    const getLayer0 = createSelector([getSourceText, getFound], (src, found) => found?.map((found) => zz(src, found)));
+    const maybeBuildHighlight = (src, found) => found?.map((found) => buildHighlight(src, found));
+    const getLayer0 = createSelector([getSourceText, getFound], maybeBuildHighlight);
+    const getLayerBold = createSelector([getSourceText, getBold], maybeBuildHighlight);
 
     function styleInject(css, ref) {
       if ( ref === void 0 ) ref = {};
@@ -3116,14 +3142,20 @@
 
     const TOUR_ID_OUTPUT = 'output';
     const Output = () => {
-        const source = useSelector(getSourceText);
         const layer0 = useSelector(getLayer0);
-        const layer0Html = layer0.unwrapOr([]).map(({ not, is }, i) => (react.createElement(react.Fragment, { key: i },
+        const layerBold = useSelector(getLayerBold);
+        // Errors are displayed elsewhere
+        function defaultArray(maybeArray) {
+            return maybeArray?.unwrapOr([]) || [];
+        }
+        const highlightsToReact = (highlights) => highlights.map(({ not, is }, i) => (react.createElement(react.Fragment, { key: i },
             not,
             react.createElement("b", null, is))));
+        const layer0Html = highlightsToReact(defaultArray(layer0));
+        const layerBoldHtml = highlightsToReact(defaultArray(layerBold));
         return (react.createElement("div", { className: css$1.container, "data-tour-id": TOUR_ID_OUTPUT },
             react.createElement("pre", { className: css$1.layer0 }, layer0Html),
-            react.createElement("pre", { className: css$1.code }, source)));
+            react.createElement("pre", { className: css$1.code }, layerBoldHtml)));
     };
 
     /*! shepherd.js 7.1.5 */

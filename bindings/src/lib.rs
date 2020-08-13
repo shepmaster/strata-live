@@ -92,6 +92,25 @@ impl IndexedSource {
             .iter_tau()
             .collect_to_js())
     }
+
+    // Should this be unified with search_layer to avoid duplicate work?
+    #[wasm_bindgen(js_name = searchWithinLayer)]
+    pub fn search_within_layer(&self, layer: &str, ident: &str) -> Result<JsExtents, JsValue> {
+        let layer = match layer.parse()? {
+            Layer::Function => &*self.layer_function,
+            Layer::Expression(None) => UnknownExpressionLayer { index: None }.fail()?,
+            Layer::Expression(Some(index)) => self
+                .layers_expression
+                .get(index)
+                .context(UnknownExpressionLayer { index })?,
+        };
+
+        let ident = self.ident(ident);
+
+        Ok(strata::ContainedIn::new(ident, layer)
+            .iter_tau()
+            .collect_to_js())
+    }
 }
 
 #[derive(Debug)]

@@ -38,6 +38,14 @@ const getFound = createSelector(
         idx?.andThen((idx) => strataErr(() => idx.searchLayer(layer, ident)))
 );
 
+const getBold = createSelector(
+    [getIndex, getSourceLayer, getSourceIdent],
+    (idx, layer, ident) =>
+        idx?.andThen((idx) =>
+            strataErr(() => idx.searchWithinLayer(layer, ident))
+        )
+);
+
 type ExtentList = BigUint64Array;
 
 const formatExtentList = (found: ExtentList) => {
@@ -61,7 +69,12 @@ export const getExecutionResult = createSelector([getFound], (found) =>
         .unwrapOrElse((e) => ({ error: JSON.stringify(e) } as ExecutionResult))
 );
 
-const zz = (src: string, found: ExtentList) => {
+export interface Highlight {
+    not: string;
+    is: string;
+}
+
+const buildHighlight = (src: string, found: ExtentList): Array<Highlight> => {
     // TODO: All the coercion seems wrong
     // TODO: Are we correctly slicing by bytes?
 
@@ -85,7 +98,15 @@ const zz = (src: string, found: ExtentList) => {
     return parts;
 };
 
+const maybeBuildHighlight = (src: string, found?: Result<ExtentList, Error>) =>
+    found?.map((found) => buildHighlight(src, found));
+
 export const getLayer0 = createSelector(
     [getSourceText, getFound],
-    (src, found) => found?.map((found) => zz(src, found))
+    maybeBuildHighlight
+);
+
+export const getLayerBold = createSelector(
+    [getSourceText, getBold],
+    maybeBuildHighlight
 );

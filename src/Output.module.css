@@ -1,22 +1,4 @@
 .container {
-    position: relative;
-    height: 100%;
     width: 100%;
-}
-
-.code {
-    position: absolute;
-}
-
-.layer {
-    position: absolute;
-    color: rgba(0, 0, 0, 0);
-}
-
-.layer0 {
-    composes: layer;
-}
-
-.layer0 > :global(b) {
-    background-color: rgba(255, 255, 0, 0.5);
+    height: 100%;
 }

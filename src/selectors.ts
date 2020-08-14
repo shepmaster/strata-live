@@ -2,6 +2,7 @@ import { createSelector } from '@reduxjs/toolkit';
 import { Result, Ok, Err } from '@hqoss/monads';
 
 import { State } from './reducers';
+import { IndexedSource } from 'bindings';
 
 function strataErr<T>(f: () => T): Result<T, Error> {
     try {
@@ -24,50 +25,36 @@ export const getIsLoaded = createSelector([getIndexedSource], (a) => !!a);
 
 const getIndex = createSelector(
     [getIndexedSource, getSourceText],
-    (IndexedSource, source) =>
-        IndexedSource && strataErr(() => new IndexedSource(source))
+    (IndexedSource, source): Zzz => {
+        if (IndexedSource) {
+            return strataErr(() => new IndexedSource(source));
+        } else {
+            return Err(new Error('naw'));
+        }
+    }
 );
 
+type Zzz = Result<IndexedSource, Error>;
+
 export const getExpressionDepth = createSelector([getIndex], (idx) =>
-    idx?.map((i) => i.expressionDepth())
+    idx.map((i) => i.expressionDepth())
 );
 
 const getFound = createSelector(
     [getIndex, getSourceLayer, getSourceIdent],
     (idx, layer, ident) =>
-        idx?.andThen((idx) => strataErr(() => idx.searchLayer(layer, ident)))
+        idx.andThen((idx) => strataErr(() => idx.searchLayer(layer, ident)))
 );
 
 const getBold = createSelector(
     [getIndex, getSourceLayer, getSourceIdent],
     (idx, layer, ident) =>
-        idx?.andThen((idx) =>
+        idx.andThen((idx) =>
             strataErr(() => idx.searchWithinLayer(layer, ident))
         )
 );
 
 type ExtentList = BigUint64Array;
-
-const formatExtentList = (found: ExtentList) => {
-    let output = '';
-    for (let i = 0; i < found.length; i += 2) {
-        output += `[${found[i]}, ${found[i + 1]}]`;
-    }
-    return output;
-};
-
-interface ExecutionResult {
-    output?: string;
-    error?: string;
-}
-
-export const getExecutionResult = createSelector([getFound], (found) =>
-    found
-        ?.map(
-            (found) => ({ output: formatExtentList(found) } as ExecutionResult)
-        )
-        .unwrapOrElse((e) => ({ error: JSON.stringify(e) } as ExecutionResult))
-);
 
 export interface Highlight {
     not: string;
@@ -98,8 +85,8 @@ const buildHighlight = (src: string, found: ExtentList): Array<Highlight> => {
     return parts;
 };
 
-const maybeBuildHighlight = (src: string, found?: Result<ExtentList, Error>) =>
-    found?.map((found) => buildHighlight(src, found));
+const maybeBuildHighlight = (src: string, found: Result<ExtentList, Error>) =>
+    found.map((found) => buildHighlight(src, found));
 
 export const getLayer0 = createSelector(
     [getSourceText, getFound],
@@ -109,4 +96,15 @@ export const getLayer0 = createSelector(
 export const getLayerBold = createSelector(
     [getSourceText, getBold],
     maybeBuildHighlight
+);
+
+export const getError = createSelector(
+    [getFound, getBold],
+    (found, bold): Result<null, Error> =>
+        found
+            .match({
+                ok: () => bold,
+                err: (e) => Err(e),
+            })
+            .map(() => null)
 );

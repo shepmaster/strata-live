@@ -5,7 +5,6 @@ import { textChange, layerChange, identChange, Layer } from './reducers/source';
 import {
     getSourceText,
     getSourceIdent,
-    getExecutionResult,
     getSourceLayer,
     getExpressionDepth,
 } from './selectors';
@@ -23,13 +22,10 @@ const Input: React.SFC = () => {
     const expressionDepth = useSelector(getExpressionDepth)?.unwrapOr(0);
     const layer = useSelector(getSourceLayer);
     const ident = useSelector(getSourceIdent);
-    const executionResult = useSelector(getExecutionResult);
 
     const expressions = Array.from(Array(expressionDepth).keys()).map((i) => (
         <option key={i}>expression-{i}</option>
     ));
-
-    const { output = '', error = '' } = executionResult!;
 
     return (
         <>
@@ -69,16 +65,6 @@ const Input: React.SFC = () => {
                     data-tour-id={TOUR_ID_IDENT}
                     className={css.source}
                 ></textarea>
-            </section>
-
-            <section>
-                <h1>Output</h1>
-                <div>{output}</div>
-            </section>
-
-            <section>
-                <h1>Error</h1>
-                <div>{error}</div>
             </section>
         </>
     );

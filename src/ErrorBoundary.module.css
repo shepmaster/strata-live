@@ -1,0 +1,9 @@
+.container {
+    display: grid;
+    height: 100vh;
+    width: 100vw;
+}
+
+.headline {
+    grid-area: headline;
+}

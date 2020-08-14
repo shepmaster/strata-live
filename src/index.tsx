@@ -7,6 +7,7 @@ import bindings from 'bindings';
 
 import reducer from './reducers';
 import { loaded } from './reducers/bindings';
+import ErrorBoundary from './ErrorBoundary';
 import Application from './Application';
 
 import './index.css';
@@ -24,7 +25,9 @@ const store = configureStore({
 
 const App: React.SFC = () => (
     <Provider store={store}>
-        <Application />
+        <ErrorBoundary>
+            <Application />
+        </ErrorBoundary>
     </Provider>
 );
 

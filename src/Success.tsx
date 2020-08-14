@@ -1,19 +1,13 @@
 import React, { Fragment } from 'react';
 import { useSelector } from 'react-redux';
-import { Result } from '@hqoss/monads';
 
-import { getLayer0, getLayerBold, Highlight } from './selectors';
+import { getLayerBold, Highlight, getLayers } from './selectors';
 
 import css from './Success.module.css';
 
 const Success: React.SFC = () => {
-    const layer0 = useSelector(getLayer0);
-    const layerBold = useSelector(getLayerBold);
-
-    // Errors are displayed elsewhere
-    function defaultArray<T>(maybeArray?: Result<Array<T>, Error>): Array<T> {
-        return maybeArray?.unwrapOr([]) || [];
-    }
+    const layers = useSelector(getLayers).unwrapOr([]);
+    const layerBold = useSelector(getLayerBold).unwrapOr([]);
 
     const highlightsToReact = (highlights: Array<Highlight>) =>
         highlights.map(({ not, is }, i) => (
@@ -23,13 +17,14 @@ const Success: React.SFC = () => {
             </Fragment>
         ));
 
-    const layer0Html = highlightsToReact(defaultArray(layer0));
-    const layerBoldHtml = highlightsToReact(defaultArray(layerBold));
-
     return (
         <div className={css.container}>
-            <pre className={css.layer0}>{layer0Html}</pre>
-            <pre className={css.code}>{layerBoldHtml}</pre>
+            {layers.map((l, i) => (
+                <pre key={i} className={css.layer} data-layer={i}>
+                    {highlightsToReact(l)}
+                </pre>
+            ))}
+            <pre className={css.code}>{highlightsToReact(layerBold)}</pre>
         </div>
     );
 };

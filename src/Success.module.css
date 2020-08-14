@@ -13,10 +13,14 @@
     color: rgba(0, 0, 0, 0);
 }
 
-.layer0 {
-    composes: layer;
+.layer[data-layer='0'] > :global(b) {
+    background-color: rgba(255, 255, 0, 0.5);
 }
 
-.layer0 > :global(b) {
-    background-color: rgba(255, 255, 0, 0.5);
+.layer[data-layer='1'] > :global(b) {
+    background-color: rgba(255, 0, 255, 0.5);
+}
+
+.layer[data-layer='2'] > :global(b) {
+    background-color: rgba(0, 255, 255, 0.5);
 }

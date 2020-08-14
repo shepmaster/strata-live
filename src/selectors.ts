@@ -18,8 +18,20 @@ function strataErr<T>(f: () => T): Result<T, Error> {
 
 const getIndexedSource = (state: State) => state.bindings.IndexedSource;
 export const getSourceText = (state: State): string => state.source.text;
-export const getSourceLayer = (state: State): string => state.source.layer;
-export const getSourceIdent = (state: State): string => state.source.ident;
+
+const getSearch = (state: State) => state.search;
+export const getSearchIndex = (state: State): number => state.search.current;
+export const getSearchCount = (state: State): number =>
+    state.search.searches.length;
+
+export const getSourceLayer = createSelector(
+    [getSearch, getSearchIndex],
+    (search, idx) => search.searches[idx].layer
+);
+export const getSourceIdent = createSelector(
+    [getSearch, getSearchIndex],
+    (search, idx) => search.searches[idx].ident
+);
 
 export const getIsLoaded = createSelector([getIndexedSource], (a) => !!a);
 
@@ -38,6 +50,16 @@ type Zzz = Result<IndexedSource, Error>;
 
 export const getExpressionDepth = createSelector([getIndex], (idx) =>
     idx.map((i) => i.expressionDepth())
+);
+
+const getAllFound = createSelector([getIndex, getSearch], (idx, search) =>
+    idx.andThen((idx) =>
+        strataErr(() =>
+            search.searches.map(({ layer, ident }) =>
+                idx.searchLayer(layer, ident)
+            )
+        )
+    )
 );
 
 const getFound = createSelector(
@@ -88,9 +110,9 @@ const buildHighlight = (src: string, found: ExtentList): Array<Highlight> => {
 const maybeBuildHighlight = (src: string, found: Result<ExtentList, Error>) =>
     found.map((found) => buildHighlight(src, found));
 
-export const getLayer0 = createSelector(
-    [getSourceText, getFound],
-    maybeBuildHighlight
+export const getLayers = createSelector(
+    [getSourceText, getAllFound],
+    (txt, f) => f.map((f) => f.map((f) => buildHighlight(txt, f)))
 );
 
 export const getLayerBold = createSelector(

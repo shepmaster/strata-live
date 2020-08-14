@@ -2,3 +2,65 @@
     width: 100%;
     font-family: monospace;
 }
+
+.tabBar {
+    display: grid;
+    grid-template-columns: 9fr 1fr;
+    grid-template-areas: 'tabs add';
+    grid-gap: 0.5em;
+
+    --inactive: #111;
+    --inactiveAccent: #888;
+    --active: #333;
+    --activeAccent: #3cf;
+    --bodyText: #ccc;
+}
+
+.tabs {
+    grid-area: tabs;
+}
+
+.addTab {
+    grid-area: add;
+}
+
+.tab {
+    background-color: var(--inactive);
+    color: var(--bodyText);
+    display: inline-grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-areas: 'name close';
+    width: min-content;
+    border-top: 2px solid rgba(0, 0, 0, 0);
+}
+
+.selectedTab {
+    composes: tab;
+    background-color: var(--active);
+    border-top-color: var(--activeAccent);
+}
+
+.tab + .tab {
+    border-left: 1px solid var(--inactiveAccent);
+}
+
+.selectedTab + .tab,
+.tab + .selectedTab {
+    border-left-color: rgba(0, 0, 0, 0);
+}
+
+.foo {
+    border: none;
+    background: inherit;
+    color: inherit;
+}
+
+.tabName {
+    composes: foo;
+    grid-area: name;
+}
+
+.tabClose {
+    composes: foo;
+    grid-area: close;
+}

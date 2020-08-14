@@ -5,7 +5,8 @@ import { useDispatch } from 'react-redux';
 import { TOUR_ID_SOURCE, TOUR_ID_LAYER, TOUR_ID_IDENT } from './Input';
 import { TOUR_ID_OUTPUT } from './Output';
 
-import { textChange, identChange, layerChange, Layer } from './reducers/source';
+import { textChange } from './reducers/source';
+import { identChange, layerChange, Layer } from './reducers/search';
 
 import css from './Tour.module.css';
 
@@ -74,7 +75,7 @@ const Tour: React.SFC = () => {
     const setLayer: Button = {
         text: '✨ Example ✨',
         action: function () {
-            dispatch(layerChange(Layer.Function));
+            dispatch(layerChange({ idx: 0, layer: Layer.Function }));
             this.next();
         },
         classes: css.actionButton,
@@ -83,7 +84,7 @@ const Tour: React.SFC = () => {
     const setIdent: Button = {
         text: '✨ Example ✨',
         action: function () {
-            dispatch(identChange(DEMO_IDENT));
+            dispatch(identChange({ idx: 0, ident: DEMO_IDENT }));
             this.next();
         },
         classes: css.actionButton,

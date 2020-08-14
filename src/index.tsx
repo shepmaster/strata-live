@@ -7,6 +7,7 @@ import bindings from 'bindings';
 
 import reducer from './reducers';
 import { loaded } from './reducers/bindings';
+
 import ErrorBoundary from './ErrorBoundary';
 import Application from './Application';
 

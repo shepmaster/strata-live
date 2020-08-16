@@ -2624,14 +2624,8 @@
     });
     const { loaded } = actions;
 
-    var Layer;
-    (function (Layer) {
-        Layer["Function"] = "function";
-    })(Layer || (Layer = {}));
     const INITIAL$1 = {
         text: '',
-        layer: Layer.Function,
-        ident: '',
     };
     const { actions: actions$1, reducer: reducer$1 } = createSlice({
         name: 'source',
@@ -2640,20 +2634,118 @@
             textChange: (state, action) => {
                 state.text = action.payload;
             },
+        },
+    });
+    const { textChange } = actions$1;
+
+    var Layer;
+    (function (Layer) {
+        Layer["Function"] = "function";
+    })(Layer || (Layer = {}));
+    const defaultSearch = () => ({
+        layer: Layer.Function,
+        ident: '',
+    });
+    const INITIAL$2 = {
+        current: 0,
+        searches: [defaultSearch()],
+    };
+    const { actions: actions$2, reducer: reducer$2 } = createSlice({
+        name: 'search',
+        initialState: INITIAL$2,
+        reducers: {
+            add: (state) => {
+                state.searches.push(defaultSearch());
+            },
+            select: (state, action) => {
+                const idx = action.payload;
+                if (idx >= 0 && idx < state.searches.length) {
+                    state.current = idx;
+                }
+            },
+            close: (state, action) => {
+                const idx = action.payload;
+                if (idx >= 0 && idx < state.searches.length) {
+                    state.searches.splice(state.current, 1);
+                    if (state.searches.length == 0) {
+                        state.searches.push(defaultSearch());
+                    }
+                    if (state.current >= state.searches.length) {
+                        state.current = state.searches.length - 1;
+                    }
+                }
+            },
             layerChange: (state, action) => {
-                state.layer = action.payload;
+                const { idx, layer } = action.payload;
+                const search = state.searches[idx];
+                if (search) {
+                    search.layer = layer;
+                }
             },
             identChange: (state, action) => {
-                state.ident = action.payload;
+                const { idx, ident } = action.payload;
+                const search = state.searches[idx];
+                if (search) {
+                    search.ident = ident;
+                }
             },
         },
     });
-    const { textChange, layerChange, identChange } = actions$1;
+    const { add, select, close, layerChange, identChange } = actions$2;
 
-    const reducer$2 = combineReducers({
+    const reducer$3 = combineReducers({
         bindings: reducer,
         source: reducer$1,
+        search: reducer$2,
     });
+
+    function styleInject(css, ref) {
+      if ( ref === void 0 ) ref = {};
+      var insertAt = ref.insertAt;
+
+      if (!css || typeof document === 'undefined') { return; }
+
+      var head = document.head || document.getElementsByTagName('head')[0];
+      var style = document.createElement('style');
+      style.type = 'text/css';
+
+      if (insertAt === 'top') {
+        if (head.firstChild) {
+          head.insertBefore(style, head.firstChild);
+        } else {
+          head.appendChild(style);
+        }
+      } else {
+        head.appendChild(style);
+      }
+
+      if (style.styleSheet) {
+        style.styleSheet.cssText = css;
+      } else {
+        style.appendChild(document.createTextNode(css));
+      }
+    }
+
+    var css_248z = ".ErrorBoundary-module_container__8wavy {\n    display: grid;\n    height: 100vh;\n    width: 100vw;\n}\n\n.ErrorBoundary-module_headline__261aO {\n    grid-area: headline;\n}\n";
+    var css = {"container":"ErrorBoundary-module_container__8wavy","headline":"ErrorBoundary-module_headline__261aO"};
+    styleInject(css_248z);
+
+    class ErrorBoundary extends react.Component {
+        constructor(props) {
+            super(props);
+            this.state = { error: undefined };
+        }
+        static getDerivedStateFromError(error) {
+            return { error };
+        }
+        render() {
+            if (this.state.error) {
+                return (react.createElement("div", { className: css.container },
+                    react.createElement("h1", { className: css.headline }, "Something went wrong")));
+            }
+            return this.props.children;
+        }
+    }
 
     var option = createCommonjsModule(function (module, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -3033,23 +3125,24 @@
     }
     const getIndexedSource = (state) => state.bindings.IndexedSource;
     const getSourceText = (state) => state.source.text;
-    const getSourceLayer = (state) => state.source.layer;
-    const getSourceIdent = (state) => state.source.ident;
+    const getSearch = (state) => state.search;
+    const getSearchIndex = (state) => state.search.current;
+    const getSearchCount = (state) => state.search.searches.length;
+    const getSourceLayer = createSelector([getSearch, getSearchIndex], (search, idx) => search.searches[idx].layer);
+    const getSourceIdent = createSelector([getSearch, getSearchIndex], (search, idx) => search.searches[idx].ident);
     const getIsLoaded = createSelector([getIndexedSource], (a) => !!a);
-    const getIndex = createSelector([getIndexedSource, getSourceText], (IndexedSource, source) => IndexedSource && strataErr(() => new IndexedSource(source)));
-    const getExpressionDepth = createSelector([getIndex], (idx) => idx?.map((i) => i.expressionDepth()));
-    const getFound = createSelector([getIndex, getSourceLayer, getSourceIdent], (idx, layer, ident) => idx?.andThen((idx) => strataErr(() => idx.searchLayer(layer, ident))));
-    const getBold = createSelector([getIndex, getSourceLayer, getSourceIdent], (idx, layer, ident) => idx?.andThen((idx) => strataErr(() => idx.searchWithinLayer(layer, ident))));
-    const formatExtentList = (found) => {
-        let output = '';
-        for (let i = 0; i < found.length; i += 2) {
-            output += `[${found[i]}, ${found[i + 1]}]`;
+    const getIndex = createSelector([getIndexedSource, getSourceText], (IndexedSource, source) => {
+        if (IndexedSource) {
+            return strataErr(() => new IndexedSource(source));
         }
-        return output;
-    };
-    const getExecutionResult = createSelector([getFound], (found) => found
-        ?.map((found) => ({ output: formatExtentList(found) }))
-        .unwrapOrElse((e) => ({ error: JSON.stringify(e) })));
+        else {
+            return lib.Err(new Error('naw'));
+        }
+    });
+    const getExpressionDepth = createSelector([getIndex], (idx) => idx.map((i) => i.expressionDepth()));
+    const getAllFound = createSelector([getIndex, getSearch], (idx, search) => idx.andThen((idx) => strataErr(() => search.searches.map(({ layer, ident }) => idx.searchLayer(layer, ident)))));
+    const getFound = createSelector([getIndex, getSourceLayer, getSourceIdent], (idx, layer, ident) => idx.andThen((idx) => strataErr(() => idx.searchLayer(layer, ident))));
+    const getBold = createSelector([getIndex, getSourceLayer, getSourceIdent], (idx, layer, ident) => idx.andThen((idx) => strataErr(() => idx.searchWithinLayer(layer, ident))));
     const buildHighlight = (src, found) => {
         // TODO: All the coercion seems wrong
         // TODO: Are we correctly slicing by bytes?
@@ -3067,95 +3160,117 @@
         parts.push({ not, is: '' });
         return parts;
     };
-    const maybeBuildHighlight = (src, found) => found?.map((found) => buildHighlight(src, found));
-    const getLayer0 = createSelector([getSourceText, getFound], maybeBuildHighlight);
+    const maybeBuildHighlight = (src, found) => found.map((found) => buildHighlight(src, found));
+    const getLayers = createSelector([getSourceText, getAllFound], (txt, f) => f.map((f) => f.map((f) => buildHighlight(txt, f))));
     const getLayerBold = createSelector([getSourceText, getBold], maybeBuildHighlight);
+    const getError = createSelector([getFound, getBold], (found, bold) => found
+        .match({
+        ok: () => bold,
+        err: (e) => lib.Err(e),
+    })
+        .map(() => null));
 
-    function styleInject(css, ref) {
-      if ( ref === void 0 ) ref = {};
-      var insertAt = ref.insertAt;
-
-      if (!css || typeof document === 'undefined') { return; }
-
-      var head = document.head || document.getElementsByTagName('head')[0];
-      var style = document.createElement('style');
-      style.type = 'text/css';
-
-      if (insertAt === 'top') {
-        if (head.firstChild) {
-          head.insertBefore(style, head.firstChild);
-        } else {
-          head.appendChild(style);
-        }
-      } else {
-        head.appendChild(style);
-      }
-
-      if (style.styleSheet) {
-        style.styleSheet.cssText = css;
-      } else {
-        style.appendChild(document.createTextNode(css));
-      }
-    }
-
-    var css_248z = ".Input-module_source__KUesD {\n    width: 100%;\n    font-family: monospace;\n}\n";
-    var css = {"source":"Input-module_source__KUesD"};
-    styleInject(css_248z);
+    var css_248z$1 = ".Input-module_source__KUesD {\n    width: 100%;\n    font-family: monospace;\n}\n\n.Input-module_tabBar__2vtAM {\n    display: grid;\n    grid-template-columns: 9fr 1fr;\n    grid-template-areas: 'tabs add';\n    grid-gap: 0.5em;\n\n    --inactive: #111;\n    --inactiveAccent: #888;\n    --active: #333;\n    --activeAccent: #3cf;\n    --bodyText: #ccc;\n}\n\n.Input-module_tabs__2GWO3 {\n    grid-area: tabs;\n}\n\n.Input-module_addTab__1Xe7e {\n    grid-area: add;\n}\n\n.Input-module_tab__1f7ff {\n    background-color: var(--inactive);\n    color: var(--bodyText);\n    display: inline-grid;\n    grid-template-columns: 2fr 1fr;\n    grid-template-areas: 'name close';\n    width: min-content;\n    border-top: 2px solid rgba(0, 0, 0, 0);\n}\n\n.Input-module_selectedTab__12vqU {\n    background-color: var(--active);\n    border-top-color: var(--activeAccent);\n}\n\n.Input-module_tab__1f7ff + .Input-module_tab__1f7ff {\n    border-left: 1px solid var(--inactiveAccent);\n}\n\n.Input-module_selectedTab__12vqU + .Input-module_tab__1f7ff,\n.Input-module_tab__1f7ff + .Input-module_selectedTab__12vqU {\n    border-left-color: rgba(0, 0, 0, 0);\n}\n\n.Input-module_foo__3wAz7 {\n    border: none;\n    background: inherit;\n    color: inherit;\n}\n\n.Input-module_tabName__2QSEA {\n    grid-area: name;\n}\n\n.Input-module_tabClose__2Hu3N {\n    grid-area: close;\n}\n";
+    var css$1 = {"source":"Input-module_source__KUesD","tabBar":"Input-module_tabBar__2vtAM","tabs":"Input-module_tabs__2GWO3","addTab":"Input-module_addTab__1Xe7e","tab":"Input-module_tab__1f7ff","selectedTab":"Input-module_selectedTab__12vqU Input-module_tab__1f7ff","foo":"Input-module_foo__3wAz7","tabName":"Input-module_tabName__2QSEA Input-module_foo__3wAz7","tabClose":"Input-module_tabClose__2Hu3N Input-module_foo__3wAz7"};
+    styleInject(css_248z$1);
 
     const TOUR_ID_SOURCE = 'source';
     const TOUR_ID_LAYER = 'layer';
     const TOUR_ID_IDENT = 'ident';
-    const Input = () => {
+    const range = (n) => Array.from(Array(n).keys());
+    const Tab = ({ index, selected }) => {
         const dispatch = useDispatch();
-        const source = useSelector(getSourceText);
-        const expressionDepth = useSelector(getExpressionDepth)?.unwrapOr(0);
+        const handleSelectSearch = react.useCallback(() => {
+            dispatch(select(index));
+        }, [dispatch, index]);
+        const handleCloseSearch = react.useCallback(() => {
+            dispatch(close(index));
+        }, [dispatch, index]);
+        return (react.createElement("div", { className: selected ? css$1.selectedTab : css$1.tab },
+            react.createElement("button", { onClick: handleSelectSearch, className: css$1.tabName }, index),
+            react.createElement("button", { title: "close", onClick: handleCloseSearch, className: css$1.tabClose }, "\u2A2F")));
+    };
+    const Tabs = () => {
+        const dispatch = useDispatch();
+        const searchCount = useSelector(getSearchCount);
+        const currentIndex = useSelector(getSearchIndex);
+        const handleAddSearch = react.useCallback(() => {
+            dispatch(add());
+        }, [dispatch]);
+        return (react.createElement("section", { className: css$1.tabBar },
+            react.createElement("div", { className: css$1.tabs }, range(searchCount).map((i) => (react.createElement(Tab, { key: i, index: i, selected: i == currentIndex })))),
+            react.createElement("button", { title: "add another", onClick: handleAddSearch, className: css$1.addTab }, "+")));
+    };
+    const Search = () => {
+        const dispatch = useDispatch();
+        const currentIndex = useSelector(getSearchIndex);
         const layer = useSelector(getSourceLayer);
         const ident = useSelector(getSourceIdent);
-        const executionResult = useSelector(getExecutionResult);
-        const expressions = Array.from(Array(expressionDepth).keys()).map((i) => (react.createElement("option", { key: i },
+        const expressionDepth = useSelector(getExpressionDepth)?.unwrapOr(0);
+        const handleLayerChange = react.useCallback((e) => dispatch(layerChange({
+            idx: currentIndex,
+            layer: e.currentTarget.value,
+        })), [dispatch, currentIndex]);
+        const handleIdentChange = react.useCallback((e) => dispatch(identChange({
+            idx: currentIndex,
+            ident: e.currentTarget.value,
+        })), [dispatch, currentIndex]);
+        const expressions = range(expressionDepth).map((i) => (react.createElement("option", { key: i },
             "expression-",
             i)));
-        const { output = '', error = '' } = executionResult;
         return (react.createElement(react.Fragment, null,
-            react.createElement("section", null,
-                react.createElement("h1", null, "Source code"),
-                react.createElement("textarea", { value: source, onChange: (e) => dispatch(textChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_SOURCE, className: css.source })),
+            react.createElement(Tabs, null),
             react.createElement("section", null,
                 react.createElement("h1", null, "Layer"),
-                react.createElement("select", { value: layer, onChange: (e) => dispatch(layerChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_LAYER },
+                react.createElement("select", { value: layer, onChange: handleLayerChange, "data-tour-id": TOUR_ID_LAYER },
                     react.createElement("option", null, "function"),
                     expressions)),
             react.createElement("section", null,
                 react.createElement("h1", null, "Ident"),
-                react.createElement("textarea", { value: ident, onChange: (e) => dispatch(identChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_IDENT, className: css.source })),
+                react.createElement("textarea", { value: ident, onChange: handleIdentChange, "data-tour-id": TOUR_ID_IDENT, className: css$1.source }))));
+    };
+    const Input = () => {
+        const dispatch = useDispatch();
+        const source = useSelector(getSourceText);
+        return (react.createElement(react.Fragment, null,
             react.createElement("section", null,
-                react.createElement("h1", null, "Output"),
-                react.createElement("div", null, output)),
-            react.createElement("section", null,
-                react.createElement("h1", null, "Error"),
-                react.createElement("div", null, error))));
+                react.createElement("h1", null, "Source code"),
+                react.createElement("textarea", { value: source, onChange: (e) => dispatch(textChange(e.currentTarget.value)), "data-tour-id": TOUR_ID_SOURCE, className: css$1.source })),
+            react.createElement(Search, null)));
     };
 
-    var css_248z$1 = ".Output-module_container__bTAHU {\n    position: relative;\n    height: 100%;\n    width: 100%;\n}\n\n.Output-module_code__23Vx0 {\n    position: absolute;\n}\n\n.Output-module_layer__355Uj {\n    position: absolute;\n    color: rgba(0, 0, 0, 0);\n}\n\n.Output-module_layer0__JoD8o {\n}\n\n.Output-module_layer0__JoD8o > b {\n    background-color: rgba(255, 255, 0, 0.5);\n}\n";
-    var css$1 = {"container":"Output-module_container__bTAHU","code":"Output-module_code__23Vx0","layer":"Output-module_layer__355Uj","layer0":"Output-module_layer0__JoD8o Output-module_layer__355Uj"};
-    styleInject(css_248z$1);
+    var css_248z$2 = ".Success-module_container__29uno {\n    position: relative;\n    height: 100%;\n    width: 100%;\n}\n\n.Success-module_code__3qify {\n    position: absolute;\n}\n\n.Success-module_layer__2txgs {\n    position: absolute;\n    color: rgba(0, 0, 0, 0);\n}\n\n.Success-module_layer__2txgs[data-layer='0'] > b {\n    background-color: rgba(255, 255, 0, 0.5);\n}\n\n.Success-module_layer__2txgs[data-layer='1'] > b {\n    background-color: rgba(255, 0, 255, 0.5);\n}\n\n.Success-module_layer__2txgs[data-layer='2'] > b {\n    background-color: rgba(0, 255, 255, 0.5);\n}\n";
+    var css$2 = {"container":"Success-module_container__29uno","code":"Success-module_code__3qify","layer":"Success-module_layer__2txgs"};
+    styleInject(css_248z$2);
 
-    const TOUR_ID_OUTPUT = 'output';
-    const Output = () => {
-        const layer0 = useSelector(getLayer0);
-        const layerBold = useSelector(getLayerBold);
-        // Errors are displayed elsewhere
-        function defaultArray(maybeArray) {
-            return maybeArray?.unwrapOr([]) || [];
-        }
+    const Success = () => {
+        const layers = useSelector(getLayers).unwrapOr([]);
+        const layerBold = useSelector(getLayerBold).unwrapOr([]);
         const highlightsToReact = (highlights) => highlights.map(({ not, is }, i) => (react.createElement(react.Fragment, { key: i },
             not,
             react.createElement("b", null, is))));
-        const layer0Html = highlightsToReact(defaultArray(layer0));
-        const layerBoldHtml = highlightsToReact(defaultArray(layerBold));
-        return (react.createElement("div", { className: css$1.container, "data-tour-id": TOUR_ID_OUTPUT },
-            react.createElement("pre", { className: css$1.layer0 }, layer0Html),
-            react.createElement("pre", { className: css$1.code }, layerBoldHtml)));
+        return (react.createElement("div", { className: css$2.container },
+            layers.map((l, i) => (react.createElement("pre", { key: i, className: css$2.layer, "data-layer": i }, highlightsToReact(l)))),
+            react.createElement("pre", { className: css$2.code }, highlightsToReact(layerBold))));
+    };
+
+    var css_248z$3 = ".Output-module_container__bTAHU {\n    width: 100%;\n    height: 100%;\n}\n";
+    var css$3 = {"container":"Output-module_container__bTAHU"};
+    styleInject(css_248z$3);
+
+    const TOUR_ID_OUTPUT = 'output';
+    const ShowError = ({ e }) => {
+        const t = JSON.stringify(e);
+        return (react.createElement("section", null,
+            react.createElement("h1", null, "An error occurred with your input"),
+            react.createElement("code", null, t)));
+    };
+    const Output = () => {
+        const error = useSelector(getError);
+        return (react.createElement("div", { className: css$3.container, "data-tour-id": TOUR_ID_OUTPUT }, error.match({
+            ok: () => react.createElement(Success, null),
+            err: (e) => react.createElement(ShowError, { e: e }),
+        })));
     };
 
     /*! shepherd.js 7.1.5 */
@@ -8961,9 +9076,9 @@
         return (react.createElement(ShepherdTourContext.Provider, { value: tourObject }, props.children));
     };
 
-    var css_248z$2 = ".Tour-module_container__2TbQh {\n    background: white;\n    padding: 0.5em;\n    border: 1px solid;\n}\n\n.Tour-module_container__2TbQh .shepherd-footer {\n    display: grid;\n    grid-template-columns: 1fr 2fr 1fr;\n    grid-template-areas: 'prev action next';\n    grid-gap: 0.5em;\n}\n\n.Tour-module_prevButton__2Mt9j {\n    grid-area: prev;\n}\n\n.Tour-module_actionButton__JEpE0 {\n    grid-area: action;\n}\n\n.Tour-module_nextButton__o8Hw3 {\n    grid-area: next;\n}\n\n.Tour-module_container__2TbQh .shepherd-arrow {\n    height: 52px;\n    width: 35px;\n}\n\n.Tour-module_container__2TbQh .shepherd-arrow:after {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 35px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='left'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-left .shepherd-arrow {\n    right: -40px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='left'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-left .shepherd-arrow:after {\n    content: '\\1F449';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='right'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-right .shepherd-arrow {\n    left: -40px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='right'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-right .shepherd-arrow:after {\n    content: '\\1F448';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='top'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-top .shepherd-arrow {\n    bottom: -47px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='top'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-top .shepherd-arrow:after {\n    content: '\\1F447';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='bottom'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-bottom .shepherd-arrow {\n    top: -47px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='bottom'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-bottom .shepherd-arrow:after {\n    content: '\\1F446';\n}\n";
-    var css$2 = {"container":"Tour-module_container__2TbQh","prevButton":"Tour-module_prevButton__2Mt9j","actionButton":"Tour-module_actionButton__JEpE0","nextButton":"Tour-module_nextButton__o8Hw3"};
-    styleInject(css_248z$2);
+    var css_248z$4 = ".Tour-module_container__2TbQh {\n    background: white;\n    padding: 0.5em;\n    border: 1px solid;\n}\n\n.Tour-module_container__2TbQh .shepherd-footer {\n    display: grid;\n    grid-template-columns: 1fr 2fr 1fr;\n    grid-template-areas: 'prev action next';\n    grid-gap: 0.5em;\n}\n\n.Tour-module_prevButton__2Mt9j {\n    grid-area: prev;\n}\n\n.Tour-module_actionButton__JEpE0 {\n    grid-area: action;\n}\n\n.Tour-module_nextButton__o8Hw3 {\n    grid-area: next;\n}\n\n.Tour-module_container__2TbQh .shepherd-arrow {\n    height: 52px;\n    width: 35px;\n}\n\n.Tour-module_container__2TbQh .shepherd-arrow:after {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 35px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='left'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-left .shepherd-arrow {\n    right: -40px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='left'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-left .shepherd-arrow:after {\n    content: '\\1F449';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='right'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-right .shepherd-arrow {\n    left: -40px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='right'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-right .shepherd-arrow:after {\n    content: '\\1F448';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='top'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-top .shepherd-arrow {\n    bottom: -47px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='top'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-top .shepherd-arrow:after {\n    content: '\\1F447';\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='bottom'] .shepherd-arrow,\n.Tour-module_container__2TbQh.shepherd-pinned-bottom .shepherd-arrow {\n    top: -47px;\n}\n\n.Tour-module_container__2TbQh[data-popper-placement^='bottom'] .shepherd-arrow:after,\n.Tour-module_container__2TbQhshepherd-pinned-bottom .shepherd-arrow:after {\n    content: '\\1F446';\n}\n";
+    var css$4 = {"container":"Tour-module_container__2TbQh","prevButton":"Tour-module_prevButton__2Mt9j","actionButton":"Tour-module_actionButton__JEpE0","nextButton":"Tour-module_nextButton__o8Hw3"};
+    styleInject(css_248z$4);
 
     const DEMO_SOURCE = `fn foo() {
     let alpha = 42;
@@ -8982,7 +9097,7 @@ fn bar() {
         const tourOptions = {
             useModalOverlay: false,
             defaultStepOptions: {
-                classes: css$2.container,
+                classes: css$4.container,
                 popperOptions: {
                     modifiers: [{ name: 'offset', options: { offset: [0, 40] } }],
                 },
@@ -8991,17 +9106,17 @@ fn bar() {
         const back = {
             type: 'back',
             text: 'Back',
-            classes: css$2.prevButton,
+            classes: css$4.prevButton,
         };
         const next = {
             type: 'next',
             text: 'Next',
-            classes: css$2.nextButton,
+            classes: css$4.nextButton,
         };
         const done = {
             type: 'next',
             text: 'Done',
-            classes: css$2.nextButton,
+            classes: css$4.nextButton,
         };
         const setSource = {
             text: '✨ Example ✨',
@@ -9009,23 +9124,23 @@ fn bar() {
                 dispatch(textChange(DEMO_SOURCE));
                 this.next();
             },
-            classes: css$2.actionButton,
+            classes: css$4.actionButton,
         };
         const setLayer = {
             text: '✨ Example ✨',
             action: function () {
-                dispatch(layerChange(Layer.Function));
+                dispatch(layerChange({ idx: 0, layer: Layer.Function }));
                 this.next();
             },
-            classes: css$2.actionButton,
+            classes: css$4.actionButton,
         };
         const setIdent = {
             text: '✨ Example ✨',
             action: function () {
-                dispatch(identChange(DEMO_IDENT));
+                dispatch(identChange({ idx: 0, ident: DEMO_IDENT }));
                 this.next();
             },
-            classes: css$2.actionButton,
+            classes: css$4.actionButton,
         };
         const steps = [
             {
@@ -9073,9 +9188,9 @@ fn bar() {
             react.createElement(Button, null)));
     };
 
-    var css_248z$3 = ".Application-module_container__2qTq_ {\n    min-height: 100vh;\n\n    display: grid;\n    grid-template-columns: 1fr 3fr;\n    grid-template-rows: 9fr 1fr;\n    grid-template-areas:\n        'input output'\n        'help help';\n\n    grid-gap: 0.5em;\n}\n\n.Application-module_input__2Akxm {\n    grid-area: input;\n}\n\n.Application-module_output__3poFl {\n    grid-area: output;\n}\n\n.Application-module_help__20qK_ {\n    grid-area: help;\n    text-align: center;\n}\n";
-    var css$3 = {"container":"Application-module_container__2qTq_","input":"Application-module_input__2Akxm","output":"Application-module_output__3poFl","help":"Application-module_help__20qK_"};
-    styleInject(css_248z$3);
+    var css_248z$5 = ".Application-module_container__2qTq_ {\n    min-height: 100vh;\n\n    display: grid;\n    grid-template-rows: 9fr 1fr;\n    grid-template-columns: 1fr 3fr;\n    grid-template-areas:\n        'input output'\n        'help help';\n\n    grid-gap: 0.5em;\n}\n\n.Application-module_input__2Akxm {\n    grid-area: input;\n}\n\n.Application-module_output__3poFl {\n    grid-area: output;\n}\n\n.Application-module_help__20qK_ {\n    grid-area: help;\n    text-align: center;\n}\n";
+    var css$5 = {"container":"Application-module_container__2qTq_","input":"Application-module_input__2Akxm","output":"Application-module_output__3poFl","help":"Application-module_help__20qK_"};
+    styleInject(css_248z$5);
 
     const Application = () => {
         const isLoaded = useSelector(getIsLoaded);
@@ -9083,21 +9198,21 @@ fn bar() {
             return react.createElement("div", null, "Loading...");
         }
         else {
-            return (react.createElement("div", { className: css$3.container },
-                react.createElement("div", { className: css$3.input },
+            return (react.createElement("div", { className: css$5.container },
+                react.createElement("div", { className: css$5.input },
                     react.createElement(Input, null)),
-                react.createElement("div", { className: css$3.output },
+                react.createElement("div", { className: css$5.output },
                     react.createElement(Output, null)),
-                react.createElement("div", { className: css$3.help },
+                react.createElement("div", { className: css$5.help },
                     react.createElement(Tour$1, null))));
         }
     };
 
-    var css_248z$4 = "/* https://dev.to/hankchizljaw/a-modern-css-reset-6p3 */\n\n/* Box sizing rules */\n*,\n*::before,\n*::after {\n    box-sizing: border-box;\n}\n\n/* Remove default padding */\nul[class],\nol[class] {\n    padding: 0;\n}\n\n/* Remove default margin */\nbody,\nh1,\nh2,\nh3,\nh4,\np,\nul[class],\nol[class],\nli,\nfigure,\nfigcaption,\nblockquote,\ndl,\ndd {\n    margin: 0;\n}\n\n/* Set core body defaults */\nbody {\n    min-height: 100vh;\n    scroll-behavior: smooth;\n    text-rendering: optimizeSpeed;\n    line-height: 1.5;\n}\n\n/* Remove list styles on ul, ol elements with a class attribute */\nul[class],\nol[class] {\n    list-style: none;\n}\n\n/* A elements that don't have a class get default styles */\na:not([class]) {\n    text-decoration-skip-ink: auto;\n}\n\n/* Make images easier to work with */\nimg {\n    max-width: 100%;\n    display: block;\n}\n\n/* Natural flow and rhythm in articles by default */\narticle > * + * {\n    margin-top: 1em;\n}\n\n/* Inherit fonts for inputs and buttons */\ninput,\nbutton,\ntextarea,\nselect {\n    font: inherit;\n}\n\n/* Remove all animations and transitions for people that prefer not to see them */\n@media (prefers-reduced-motion: reduce) {\n    * {\n        animation-duration: 0.01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: 0.01ms !important;\n        scroll-behavior: auto !important;\n    }\n}\n\n/* ---- */\n\n#main {\n    min-height: 100vh;\n}\n";
-    styleInject(css_248z$4);
+    var css_248z$6 = "/* https://dev.to/hankchizljaw/a-modern-css-reset-6p3 */\n\n/* Box sizing rules */\n*,\n*::before,\n*::after {\n    box-sizing: border-box;\n}\n\n/* Remove default padding */\nul[class],\nol[class] {\n    padding: 0;\n}\n\n/* Remove default margin */\nbody,\nh1,\nh2,\nh3,\nh4,\np,\nul[class],\nol[class],\nli,\nfigure,\nfigcaption,\nblockquote,\ndl,\ndd {\n    margin: 0;\n}\n\n/* Set core body defaults */\nbody {\n    min-height: 100vh;\n    scroll-behavior: smooth;\n    text-rendering: optimizeSpeed;\n    line-height: 1.5;\n}\n\n/* Remove list styles on ul, ol elements with a class attribute */\nul[class],\nol[class] {\n    list-style: none;\n}\n\n/* A elements that don't have a class get default styles */\na:not([class]) {\n    text-decoration-skip-ink: auto;\n}\n\n/* Make images easier to work with */\nimg {\n    max-width: 100%;\n    display: block;\n}\n\n/* Natural flow and rhythm in articles by default */\narticle > * + * {\n    margin-top: 1em;\n}\n\n/* Inherit fonts for inputs and buttons */\ninput,\nbutton,\ntextarea,\nselect {\n    font: inherit;\n}\n\n/* Remove all animations and transitions for people that prefer not to see them */\n@media (prefers-reduced-motion: reduce) {\n    * {\n        animation-duration: 0.01ms !important;\n        animation-iteration-count: 1 !important;\n        transition-duration: 0.01ms !important;\n        scroll-behavior: auto !important;\n    }\n}\n\n/* ---- */\n\n#main {\n    min-height: 100vh;\n}\n\nbutton:enabled {\n    cursor: pointer;\n}\n";
+    styleInject(css_248z$6);
 
     const store = configureStore({
-        reducer: reducer$2,
+        reducer: reducer$3,
         middleware: getDefaultMiddleware({
             serializableCheck: {
                 ignoredActions: ['bindings/loaded'],
@@ -9106,7 +9221,8 @@ fn bar() {
         }),
     });
     const App = () => (react.createElement(Provider, { store: store },
-        react.createElement(Application, null)));
+        react.createElement(ErrorBoundary, null,
+            react.createElement(Application, null))));
     // TODO: Should actually have basic HTML structure in the HTML
     const main$1 = document.createElement('div');
     main$1.id = 'main';

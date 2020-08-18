@@ -23,7 +23,7 @@ const config = {
     plugins: [
         resolve(),
         commonJs({
-            include: ['node_modules/**', '../monads/dist/**'],
+            include: ['node_modules/**'],
         }),
         inject({
             process: processPath,

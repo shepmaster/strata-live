@@ -2608,7 +2608,7 @@
     });
 
     var bindings = async () => {
-                            await init("assets/bindings-b5a096f6.wasm");
+                            await init("assets/bindings-df10779f.wasm");
                             return exports$1;
                         };
 
